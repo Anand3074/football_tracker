@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>VisionPlay Match Report</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .report-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .metric-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .metric-card {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid #667eea;
+        }
+        .metric-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .insights-list {
+            list-style: none;
+            padding: 0;
+        }
+        .insights-list li {
+            padding: 10px;
+            margin: 8px 0;
+            background: #f8f9ff;
+            border-radius: 5px;
+            border-left: 4px solid #4CAF50;
+        }
+        .event-item {
+            background: #f8f9fa;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="report-header">
+        <h1>📋 VisionPlay Pro Match Report</h1>
+        <p>AI-Powered Football Analysis</p>
+    </div>
+    
+    <div class="section">
+        <h2>📊 Match Summary</h2>
+        <div class="metric-cards">
+            <div class="metric-card">
+                <div class="metric-value">{{ report.match_summary.duration }}</div>
+                <div>Analysis Duration</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">{{ report.match_summary.total_events }}</div>
+                <div>Events Detected</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">{{ report.match_summary.analysis_quality }}</div>
+                <div>Analysis Quality</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>🎯 Key Performance Metrics</h2>
+        <div class="metric-cards">
+            {% for key, value in report.key_metrics.items() %}
+            <div class="metric-card">
+                <div class="metric-value">{{ value }}</div>
+                <div>{{ key|replace('_', ' ')|title }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>💡 Performance Insights</h2>
+        <ul class="insights-list">
+            {% for insight in report.performance_insights %}
+            <li>{{ insight }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    
+    <div style="text-align: center; margin-top: 30px;">
+        <button onclick="window.print()" style="padding: 12px 25px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">
+            🖨️ Print Report
+        </button>
+        <button onclick="window.close()" style="padding: 12px 25px; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px;">
+            ❌ Close
+        </button>
+    </div>
+</body>
+</html>

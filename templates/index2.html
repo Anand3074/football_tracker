@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>VisionPlay Pro - Football Analytics</title>
+    <style>
+        /* Add all your original CSS styles here */
+        /* I'll include the essential parts for functionality */
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .upload-container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .analytics-section {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border: 2px solid #667eea40;
+            padding: 25px;
+            border-radius: 20px;
+            margin: 20px 0;
+        }
+        
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .analytics-item {
+            background: #f8f9ff;
+            border: 2px solid #e0e4ff;
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .analytics-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .analytics-item.selected {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .analytics-icon {
+            font-size: 2em;
+            margin-bottom: 8px;
+            display: block;
+        }
+        
+        .processing-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .processing-content {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 500px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="upload-container">
+            <h1 style="text-align: center; margin-bottom: 10px;">⚽ VisionPlay Pro</h1>
+            <p style="text-align: center; color: #666; margin-bottom: 30px;">Advanced Football Video Analytics Platform</p>
+
+            {% with messages = get_flashed_messages() %}
+              {% if messages %}
+                <div style="background: #ffebee; color: #c62828; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                {% for message in messages %}
+                  <div>{{ message }}</div>
+                {% endfor %}
+                </div>
+              {% endif %}
+            {% endwith %}
+
+            <div style="background: #e3f2fd; padding: 20px; border-radius: 10px; margin-bottom: 25px;">
+                <strong>🚀 Next-Gen Football Analytics</strong>
+                <ol style="margin: 10px 0; padding-left: 20px;">
+                    <li>Upload match video (max 50MB)</li>
+                    <li>Select tracking features</li>
+                    <li>Enable advanced analytics</li>
+                    <li>Get pro-level insights in seconds!</li>
+                </ol>
+            </div>
+
+            <form method="post" enctype="multipart/form-data" id="uploadForm" action="{{ url_for('index') }}">
+                <!-- File upload section -->
+                <div style="margin-bottom: 25px;">
+                    <label style="display: block; margin-bottom: 10px; font-weight: bold;">🎥 Upload Match Video</label>
+                    <div style="border: 2px dashed #ccc; border-radius: 10px; padding: 40px; text-align: center; cursor: pointer; transition: all 0.3s;" 
+                         id="fileUploadWrapper" 
+                         ondrop="dropHandler(event)" 
+                         ondragover="dragOverHandler(event)">
+                        <input type="file" id="video_file" name="video_file" accept="video/*" required 
+                               style="position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer;">
+                        <div style="font-size: 3em; margin-bottom: 10px;">📤</div>
+                        <div style="font-size: 1.2em; margin-bottom: 10px;" id="fileUploadText">Click to upload or drag & drop</div>
+                        <small>Supported: MP4, AVI, MOV, MKV (Max 50MB)</small>
+                    </div>
+                    <div id="fileInfo" style="margin-top: 10px; display: none;"></div>
+                </div>
+                
+                <!-- Action Tracking -->
+                <div style="margin-bottom: 25px;">
+                    <label style="display: block; margin-bottom: 10px; font-weight: bold;">🎯 Track Actions</label>
+                    <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                        <div>
+                            <input type="checkbox" id="dribble" name="actions" value="dribble" checked>
+                            <label for="dribble">🔵 Dribble</label>
+                        </div>
+                        <div>
+                            <input type="checkbox" id="pass" name="actions" value="pass" checked>
+                            <label for="pass">🟡 Pass</label>
+                        </div>
+                        <div>
+                            <input type="checkbox" id="shoot" name="actions" value="shoot" checked>
+                            <label for="shoot">🔴 Shoot</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Advanced Analytics -->
+                <div class="analytics-section">
+                    <label style="display: block; margin-bottom: 10px; font-weight: bold;">📊 Advanced Analytics</label>
+                    <div class="analytics-grid">
+                        <div class="analytics-item selected" onclick="toggleAnalytics(this)">
+                            <span class="analytics-icon">🔥</span>
+                            <div>Heatmap</div>
+                            <small>Player Movement</small>
+                            <input type="checkbox" name="analytics" value="heatmap" checked style="display: none;">
+                        </div>
+                        <div class="analytics-item selected" onclick="toggleAnalytics(this)">
+                            <span class="analytics-icon">📈</span>
+                            <div>Live Dashboard</div>
+                            <small>Real-time Stats</small>
+                            <input type="checkbox" name="analytics" value="dashboard" checked style="display: none;">
+                        </div>
+                        <div class="analytics-item selected" onclick="toggleAnalytics(this)">
+                            <span class="analytics-icon">👥</span>
+                            <div>Team Tracking</div>
+                            <small>Auto Team ID</small>
+                            <input type="checkbox" name="analytics" value="teams" checked style="display: none;">
+                        </div>
+                        <div class="analytics-item selected" onclick="toggleAnalytics(this)">
+                            <span class="analytics-icon">⚡</span>
+                            <div>Event Detection</div>
+                            <small>Passes & Shots</small>
+                            <input type="checkbox" name="analytics" value="events" checked style="display: none;">
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 30px;">
+                    <button type="submit" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                            color: white; padding: 15px 30px; border: none; border-radius: 8px; 
+                            font-size: 1.1em; cursor: pointer; position: relative; overflow: hidden;" 
+                            id="processBtn">
+                        <span style="position: relative; z-index: 1;">🚀 Analyze Match</span>
+                    </button>
+                </div>
+            </form>
+            
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+                <form method="post" action="{{ url_for('cleanup') }}" onsubmit="return confirm('This will delete ALL uploaded and processed data. Continue?')">
+                    <div style="text-align: center;">
+                        <button type="submit" style="background: #6c757d; color: white; padding: 12px 25px; 
+                                border: none; border-radius: 8px; cursor: pointer;">
+                            <span>🧹 Cleanup All Data</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+                <form method="post" action="{{ url_for('cleanup') }}" onsubmit="return confirm('This will delete ALL uploaded and processed data. Continue?')">
+                    <div style="text-align: center;">
+                        <button type="submit" style="background: #6c757d; color: white; padding: 12px 25px; 
+                                border: none; border-radius: 8px; cursor: pointer;">
+                            <span>🧹 Cleanup All Data</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Processing Overlay -->
+    <div class="processing-overlay" id="processingOverlay">
+        <div class="processing-content">
+            <div style="font-size: 4em; margin-bottom: 20px;">⚽</div>
+            <div style="font-size: 1.5em; font-weight: bold; margin-bottom: 10px;">VisionPlay Pro Analysis</div>
+            <div style="color: #666; margin-bottom: 30px;">
+                AI is performing advanced match analysis...
+            </div>
+            <div style="text-align: left;">
+                <div style="display: flex; align-items: center; margin: 10px 0;">
+                    <span style="background: #4CAF50; color: white; width: 30px; height: 30px; 
+                          border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 10px;">✅</span>
+                    <span>Video uploaded</span>
+                </div>
+                <div style="display: flex; align-items: center; margin: 10px 0;">
+                    <span style="background: #2196F3; color: white; width: 30px; height: 30px; 
+                          border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 10px; 
+                          animation: pulse 1.5s infinite;">🔄</span>
+                    <span>Player & ball detection</span>
+                </div>
+                <div style="display: flex; align-items: center; margin: 10px 0;">
+                    <span style="background: #ccc; color: white; width: 30px; height: 30px; 
+                          border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 10px;">⏳</span>
+                    <span>Team classification</span>
+                </div>
+                <div style="display: flex; align-items: center; margin: 10px 0;">
+                    <span style="background: #ccc; color: white; width: 30px; height: 30px; 
+                          border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 10px;">⏳</span>
+                    <span>Movement analysis</span>
+                </div>
+                <div style="display: flex; align-items: center; margin: 10px 0;">
+                    <span style="background: #ccc; color: white; width: 30px; height: 30px; 
+                          border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 10px;">⏳</span>
+                    <span>Event detection</span>
+                </div>
+                <div style="display: flex; align-items: center; margin: 10px 0;">
+                    <span style="background: #ccc; color: white; width: 30px; height: 30px; 
+                          border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 10px;">⏳</span>
+                    <span>Generating insights</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Analytics toggle functionality
+        function toggleAnalytics(element) {
+            const checkbox = element.querySelector('input[type="checkbox"]');
+            const isSelected = element.classList.contains('selected');
+            
+            if (isSelected) {
+                element.classList.remove('selected');
+                checkbox.checked = false;
+            } else {
+                element.classList.add('selected');
+                checkbox.checked = true;
+            }
+        }
+        
+        // File upload handling
+        const fileInput = document.getElementById('video_file');
+        const fileWrapper = document.getElementById('fileUploadWrapper');
+        const fileUploadText = document.getElementById('fileUploadText');
+        const fileInfo = document.getElementById('fileInfo');
+        
+        fileInput.addEventListener('change', function(e) {
+            if (this.files && this.files[0]) {
+                const file = this.files[0];
+                const fileSize = (file.size / (1024 * 1024)).toFixed(2);
+                
+                fileUploadText.textContent = file.name;
+                fileInfo.innerHTML = `
+                    <div style="background: #e8f5e8; padding: 10px; border-radius: 5px;">
+                        <strong>✅ Ready to analyze:</strong> ${file.name} (${fileSize} MB)
+                    </div>
+                `;
+                fileInfo.style.display = 'block';
+                
+                fileWrapper.style.borderColor = '#4CAF50';
+                fileWrapper.style.background = '#e8f5e8';
+            }
+        });
+        
+        // Drag and drop
+        function dragOverHandler(event) {
+            event.preventDefault();
+            fileWrapper.style.borderColor = '#2196F3';
+            fileWrapper.style.background = '#e3f2fd';
+        }
+        
+        function dropHandler(event) {
+            event.preventDefault();
+            if (event.dataTransfer.files.length) {
+                fileInput.files = event.dataTransfer.files;
+                fileInput.dispatchEvent(new Event('change'));
+            }
+        }
+        
+        // Form submission - modern AJAX approach
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!fileInput.files.length) {
+                alert('Please select a video file to analyze.');
+                return;
+            }
+            
+            // Show processing overlay
+            document.getElementById('processingOverlay').style.display = 'flex';
+            
+            // Create FormData
+            const formData = new FormData(this);
+            
+            // Submit via AJAX
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                // Start polling for status
+                pollProcessingStatus(data.job_id, data.output_filename, data.analytics_filename);
+            })
+            .catch(error => {
+                console.error('Upload failed:', error);
+                document.getElementById('processingOverlay').style.display = 'none';
+                alert('Upload failed: ' + error.message);
+            });
+        });
+        
+        // Poll for processing status
+        function pollProcessingStatus(jobId, outputFilename, analyticsFilename) {
+            const checkStatus = async () => {
+                try {
+                    const response = await fetch(`/status/${jobId}`);
+                    const status = await response.json();
+                    
+                    if (status.status === 'completed') {
+                        // Processing complete - redirect to results
+                        setTimeout(() => {
+                            window.location.href = `/result/${outputFilename}?analytics=${analyticsFilename}`;
+                        }, 1000);
+                    } else if (status.status === 'error') {
+                        // Processing failed
+                        document.getElementById('processingOverlay').style.display = 'none';
+                        alert('Analysis failed: ' + status.message);
+                    } else {
+                        // Still processing, continue polling
+                        setTimeout(checkStatus, 2000);
+                    }
+                } catch (error) {
+                    console.error('Error checking status:', error);
+                    setTimeout(checkStatus, 3000);
+                }
+            };
+            
+            checkStatus();
+        }
+        
+        // Initialize all analytics items as selected
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.analytics-item').forEach(item => {
+                item.classList.add('selected');
+                item.querySelector('input[type="checkbox"]').checked = true;
+            });
+        });
+    </script>
+</body>
+</html>

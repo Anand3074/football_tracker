@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>VisionPlay Analysis: {{ filename }}</title>
+    <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --success: #4CAF50;
+            --text-muted: #666;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .video-container {
+            background: #000;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        video {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+        }
+        .download-btn {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px 5px;
+        }
+        .download-btn:hover {
+            background: #218838;
+        }
+        .back-btn {
+            display: inline-block;
+            background: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px 5px;
+        }
+        .back-btn:hover {
+            background: #545b62;
+        }
+        .legend {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .legend-item {
+            display: inline-block;
+            margin: 0 15px;
+        }
+        .color-box {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+            border: 1px solid #ddd;
+        }
+        .analytics-dashboard {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .metric-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .metric-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        .events-timeline {
+            margin-top: 20px;
+        }
+        .event-item {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .report-btn {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            margin: 10px 5px;
+        }
+        .loading {
+            color: #666;
+            padding: 20px;
+            text-align: center;
+        }
+        .error {
+            color: #dc3545;
+            padding: 20px;
+            background: #f8d7da;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .dashboard-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .dashboard-icon {
+            font-size: 2em;
+        }
+        .event-type {
+            background: #667eea;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            margin-right: 10px;
+        }
+        .event-probability {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎯 VisionPlay Pro Analysis</h1>
+    
+    <div class="legend">
+        <h3>Advanced Tracking Legend:</h3>
+        <div class="legend-item">
+            <span class="color-box" style="background-color: rgb(0, 255, 0);"></span>
+            <span>Normal Tracking</span>
+        </div>
+        <div class="legend-item">
+            <span class="color-box" style="background-color: rgb(255, 0, 0);"></span>
+            <span>Dribble / RED Team</span>
+        </div>
+        <div class="legend-item">
+            <span class="color-box" style="background-color: rgb(0, 0, 255);"></span>
+            <span>BLUE Team</span>
+        </div>
+        <div class="legend-item">
+            <span class="color-box" style="background-color: rgb(0, 255, 255);"></span>
+            <span>Pass</span>
+        </div>
+        <div class="legend-item">
+            <span class="color-box" style="background-color: rgb(255, 0, 255);"></span>
+            <span>Shot</span>
+        </div>
+        <div class="legend-item">
+            <span class="color-box" style="background: linear-gradient(45deg, #ff0000, #0000ff);"></span>
+            <span>Heatmap Overlay</span>
+        </div>
+    </div>
+
+    <!-- Analytics Dashboard -->
+    {% if analytics_data %}
+    <div class="analytics-dashboard">
+        <div class="dashboard-header">
+            <div class="dashboard-icon">📊</div>
+            <h2>Live Match Analytics</h2>
+        </div>
+
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-icon">🟡</div>
+                <div class="metric-value">{{ analytics_data.passes if 'passes' in analytics_data else (analytics_data.summary.total_passes if analytics_data.summary and 'total_passes' in analytics_data.summary else 0) }}</div>
+                <div class="metric-label">Total Passes</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon">🔴</div>
+                <div class="metric-value">{{ analytics_data.shots if 'shots' in analytics_data else (analytics_data.summary.total_shots if analytics_data.summary and 'total_shots' in analytics_data.summary else 0) }}</div>
+                <div class="metric-label">Shots Taken</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon">⚽</div>
+                <div class="metric-value">{{ analytics_data.goals if 'goals' in analytics_data else (analytics_data.summary.total_goals if analytics_data.summary and 'total_goals' in analytics_data.summary else 0) }}</div>
+                <div class="metric-label">Goals Scored</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-icon">⚡</div>
+                <div class="metric-value">
+                    {% if analytics_data.summary and 'key_events' in analytics_data.summary %}
+                        {{ analytics_data.summary.key_events }}
+                    {% elif analytics_data.events %}
+                        {{ analytics_data.events|length }}
+                    {% else %}
+                        0
+                    {% endif %}
+                </div>
+                <div class="metric-label">Key Events</div>
+            </div>
+        </div>
+
+        <!-- Events Timeline -->
+        {% set all_events = [] %}
+        {% if analytics_data.events %}
+            {% set all_events = all_events + analytics_data.events %}
+        {% endif %}
+        {% if analytics_data.pass_events %}
+            {% set all_events = all_events + analytics_data.pass_events %}
+        {% endif %}
+        
+        {% if all_events %}
+        <div class="events-timeline">
+            <h3>⏱️ Key Match Events</h3>
+            {% for event in all_events[:8] %}
+            <div class="event-item">
+                <div>
+                    <span class="event-type">{{ event.type if event.type else 'event' }}</span>
+                    <span style="color: #666;">
+                        {% if event.timestamp %}
+                            ⏱ {{ "%.1f"|format(event.timestamp) }}s
+                        {% else %}
+                            ⏱ Event
+                        {% endif %}
+                    </span>
+                </div>
+                <div>
+                    {% if event.type == 'pass' %}
+                        Player {{ event.from if event.from is defined else 'Unknown' }} → Player {{ event.to if event.to is defined else 'Unknown' }}
+                        {% if event.speed %}
+                            <span style="color: #667eea;">({{ "%.1f"|format(event.speed) }} px/s)</span>
+                        {% endif %}
+                    {% elif event.type == 'shot' %}
+                        Player {{ event.player if event.player is defined else 'Unknown' }}
+                        {% if event.probability %}
+                            <span class="event-probability">🎯 {{ event.probability|round|int }}% chance</span>
+                        {% endif %}
+                    {% elif event.type == 'goal' %}
+                        Player {{ event.player if event.player is defined else 'Unknown' }} 
+                        <span style="color: #4CAF50; font-weight: 700;">SCORED!</span>
+                    {% else %}
+                        {{ (event.type if event.type else 'Event')|title }}
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if request.args.get('analytics') %}
+        <div style="text-align: center; margin-top: 20px;">
+            <button class="report-btn" onclick="window.open('/match_report/{{ request.args.get('analytics') }}', '_blank')">
+                📋 Generate Full Report
+            </button>
+        </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="analytics-dashboard">
+        <div class="dashboard-header">
+            <div class="dashboard-icon">📊</div>
+            <h2>Match Analytics</h2>
+        </div>
+        <div style="text-align: center; padding: 40px; color: #666;">
+            <div style="font-size: 3em; margin-bottom: 20px;">📈</div>
+            <p>Analytics data is being processed...</p>
+            <p style="font-size: 0.9em;">If this persists, the analytics file may not have been generated.</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="video-container">
+        <video controls autoplay muted preload="auto" width="800" height="450" id="matchVideo">
+            <source src="{{ video_url }}" type="video/mp4">
+            <source src="{{ video_url }}" type="video/avi">
+            <source src="{{ video_url }}" type="video/quicktime">
+            Your browser does not support HTML5 video.
+        </video>
+        <div id="loadingMessage" class="loading">Loading advanced analysis...</div>
+        <div id="errorMessage" class="error" style="display: none;"></div>
+        <div id="videoInfo" style="display: none; background: #e3f2fd; padding: 10px; border-radius: 5px; margin-top: 10px;"></div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const video = document.getElementById('matchVideo');
+            const loadingMessage = document.getElementById('loadingMessage');
+            const errorMessage = document.getElementById('errorMessage');
+            const videoInfo = document.getElementById('videoInfo');
+            
+            video.addEventListener('loadeddata', function() {
+                loadingMessage.textContent = '🎯 Analysis Complete - Playing Video';
+                videoInfo.innerHTML = `✅ Video loaded: ${video.videoWidth}x${video.videoHeight}, Duration: ${video.duration.toFixed(1)}s`;
+                videoInfo.style.display = 'block';
+                setTimeout(() => {
+                    loadingMessage.style.display = 'none';
+                }, 2000);
+            });
+            
+            video.addEventListener('error', function(e) {
+                loadingMessage.style.display = 'none';
+                errorMessage.style.display = 'block';
+                errorMessage.innerHTML = `
+                    ⚠️ Error loading video. <br>
+                    <a href="{{ video_url }}" download class="download-btn" style="display: inline-block; margin-top: 10px;">
+                        📥 Download Video Instead
+                    </a>
+                `;
+                console.error('Video error:', video.error);
+            });
+            
+            video.addEventListener('waiting', function() {
+                loadingMessage.style.display = 'block';
+                loadingMessage.textContent = 'Buffering video...';
+            });
+            
+            video.addEventListener('playing', function() {
+                loadingMessage.style.display = 'none';
+            });
+            
+            // Try to play after a timeout
+            setTimeout(() => {
+                if (video.readyState < 2) { // HAVE_CURRENT_DATA
+                    loadingMessage.textContent = 'Still loading video...';
+                }
+            }, 5000);
+            
+            {% if analytics_data %}
+            console.log('Advanced analytics loaded:', {{ analytics_data|tojson }});
+            {% endif %}
+        });
+    </script>
+
+    <div style="text-align: center;">
+        <a href="{{ video_url }}" download class="download-btn">
+            📥 Download Analyzed Video
+        </a>
+        
+        {% if analytics_data and request.args.get('analytics') %}
+        <a href="/analytics/{{ request.args.get('analytics') }}" download class="download-btn">
+            📊 Download Analytics Data
+        </a>
+        {% endif %}
+        
+        <a href="/" class="back-btn">
+            ⬅ Analyze Another Match
+        </a>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const video = document.querySelector('video');
+            const loadingMessage = document.getElementById('loadingMessage');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            video.addEventListener('loadeddata', function() {
+                loadingMessage.textContent = '🎯 Analysis Complete - Playing Video';
+                setTimeout(() => {
+                    loadingMessage.style.display = 'none';
+                }, 2000);
+            });
+            
+            video.addEventListener('error', function() {
+                loadingMessage.style.display = 'none';
+                errorMessage.style.display = 'block';
+                errorMessage.textContent = 'Error loading video. Please try downloading it instead.';
+            });
+            
+            video.addEventListener('waiting', function() {
+                loadingMessage.style.display = 'block';
+                loadingMessage.textContent = 'Buffering video...';
+            });
+            
+            video.addEventListener('playing', function() {
+                loadingMessage.style.display = 'none';
+            });
+            
+            {% if analytics_data %}
+            console.log('Advanced analytics loaded:', {{ analytics_data|tojson }});
+            {% endif %}
+        });
+    </script>
+</body>
+</html>
