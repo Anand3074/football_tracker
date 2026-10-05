@@ -1,527 +1,409 @@
 # ⚽ VisionPlay Pro
 
-### Advanced Football Analytics & Decision Support System
+**Football video analytics with a tactical Decision Support System (DSS).**
 
-VisionPlay Pro is an AI-powered football video analysis platform that combines computer vision, player tracking, tactical analytics, and a Decision Support System (DSS) to extract meaningful insights from football match footage.
+![Python](https://img.shields.io/badge/Python-3.9%2B-blue?logo=python&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-Web%20App-black?logo=flask)
+![YOLOv8](https://img.shields.io/badge/YOLOv8-Ultralytics-00FFFF)
+![OpenCV](https://img.shields.io/badge/OpenCV-Computer%20Vision-green?logo=opencv)
+![License](https://img.shields.io/badge/License-MIT-yellow)
 
-The system processes uploaded football videos using YOLOv8-based tracking and generates annotated videos, player/team analytics, tactical recommendations, and comprehensive match reports.
-
----
-
-## 🚀 Overview
-
-VisionPlay Pro transforms raw football footage into structured tactical and performance insights.
-
-Instead of simply detecting players, the system analyzes the game situation and provides actionable recommendations such as:
-
-- ⚽ Shooting opportunities
-- 🔄 Passing opportunities
-- 🏃 Dribbling opportunities
-- 🧠 Tactical decision recommendations
-- 🎯 Goal probability
-- 📊 Player and team statistics
-- 🔥 Player heatmaps
-- 🧭 Passing-lane analysis
-- ⚡ Ball possession
-- 🏟️ Game-state awareness
-
-The application provides both an **annotated match video** and a **web-based analytics dashboard**.
+VisionPlay Pro takes a football clip, detects and tracks players and the ball with YOLOv8, detects passes, shots and goals, and runs a rule-based Decision Support System that recommends the best tactical option (shoot, pass or dribble) for the player in possession. Results are delivered as an annotated video, a JSON analytics file, a web dashboard and a match report.
 
 ---
 
-## ✨ Key Features
+## 📑 Table of Contents
 
-### 🎥 AI Video Analysis
-
-Upload football footage and let the system automatically process the video.
-
-**Supported formats:**
-
-- `.mp4`
-- `.avi`
-- `.mov`
-- `.mkv`
-
-**Maximum upload size:** `50 MB`
-
-The system processes videos asynchronously so that the web interface remains responsive while analysis is running.
+- [Quick Start](#-quick-start)
+- [Prerequisites](#-prerequisites)
+- [Installation](#-installation)
+- [Running the Application](#-running-the-application)
+- [Using the App](#-using-the-app)
+- [Required Files](#-required-files)
+- [Features](#-features)
+- [How It Works](#-how-it-works)
+- [Decision Support System](#-decision-support-system)
+- [API Endpoints](#-api-endpoints)
+- [Generated Files](#-generated-files)
+- [Configuration](#-configuration)
+- [Troubleshooting](#-troubleshooting)
+- [Limitations](#-limitations)
+- [Roadmap](#-roadmap)
+- [Security Notes](#-security-notes)
+- [Author](#-author)
+- [License](#-license)
 
 ---
 
-### 👥 Player Detection & Tracking
+## ⚡ Quick Start
 
-VisionPlay Pro uses YOLOv8-based computer vision to detect and track players throughout the video.
-
-Tracked players are assigned unique IDs, allowing the system to maintain player identity across frames.
-
-Example:
-
-```text
-RP35
-RP3
-BP23
-BP2
-
-🎯 Action Detection
-The system supports detection and analysis of three primary football actions:
-Action	Description
-⚽ Shooting	Detects shooting events and evaluates shot quality
-🔄 Passing	Identifies passing opportunities and passing situations
-🏃 Dribbling	Identifies situations where dribbling may be beneficial
-
-
-🧠 Decision Support System
-The core feature of VisionPlay Pro is the Tactical Decision Support System (DSS).
-The DSS analyzes the current game context and generates tactical recommendations.
-Possible recommendations include:
-Shoot
-Pass
-Dribble
-Hold
-Clear
-
-Example:
-Generated 7 tactical recommendations
-
-Shoot       0
-Pass        7
-Dribble     0
-
-Average Decision Confidence: 72.2%
-
-The goal of the DSS is to move beyond simple object detection toward context-aware tactical analysis.
-📊 Analytics
-VisionPlay Pro generates several football analytics metrics.
-Match Statistics
-- Total Goals
-- Total Shots
-- Total Passes
-- Match Duration
-- Pass Accuracy
-- Shot Accuracy
-Advanced Metrics
-- Average Shot Quality
-- Goal Conversion
-- Key Events
-- Top Possession Player
-Tactical Analytics
-- Player Heatmap
-- Team Assignment
-- Ball Possession
-- Passing Lanes
-- Game State Awareness
-- Goal Probability
-🔥 Player Heatmap
-The analytics module provides spatial information about player positioning throughout the match.
-This can help identify:
-- Frequently occupied areas
-- Player positioning
-- Attacking and defensive zones
-- Movement patterns
-🔄 Passing Lane Analysis
-The system analyzes player positioning and available passing opportunities.
-This can help identify:
-- Potential passing targets
-- Passing opportunities
-- Spatial awareness
-- Available passing lanes
-Example:
-Player maintains good spatial awareness with 7 passing opportunities identified.
-
-🎯 Goal Probability & Shot Quality
-For detected shooting situations, VisionPlay Pro evaluates the quality of the opportunity.
-Example:
-Shot Quality: 40.5%
-Goal Probability: 41%
-
-These metrics provide additional context around shooting events rather than simply counting shots.
-🎬 Annotated Video Output
-After processing, VisionPlay Pro produces an annotated version of the uploaded video.
-The processed video can contain:
-- Player bounding boxes
-- Player tracking IDs
-- Team identification
-- Ball tracking
-- Goal probability
-- Tactical information
-- Match statistics
-- Event information
-Example:
-Goals: 0
-Shots: 0
-Passes: 0
-Time: 3.3s
-Goal Probability: 0%
-
-📋 Event Timeline
-Important events detected during processing are displayed in an event timeline.
-Example:
-5.8s    ⚽ Shot by Player 86    41%
-
-This provides a chronological view of important match events.
-🖥️ Application Workflow
-                    ┌─────────────────┐
-                    │   Upload Video  │
-                    └────────┬────────┘
-                             │
-                             ▼
-                    ┌─────────────────┐
-                    │ Select Analysis │
-                    │    Options      │
-                    └────────┬────────┘
-                             │
-                             ▼
-                    ┌─────────────────┐
-                    │ YOLOv8 Tracking │
-                    │  & Detection    │
-                    └────────┬────────┘
-                             │
-                             ▼
-                 ┌─────────────────────────┐
-                 │ Football Event Analysis│
-                 │                         │
-                 │ • Shooting              │
-                 │ • Passing               │
-                 │ • Dribbling             │
-                 │ • Possession            │
-                 └────────────┬────────────┘
-                              │
-                              ▼
-                    ┌─────────────────┐
-                    │  DSS Analysis   │
-                    │                 │
-                    │ Shoot / Pass /  │
-                    │ Dribble / Hold  │
-                    └────────┬────────┘
-                             │
-                             ▼
-                   ┌───────────────────┐
-                   │ Analytics JSON    │
-                   │ + Processed Video │
-                   └────────┬──────────┘
-                            │
-                            ▼
-                  ┌────────────────────┐
-                  │ Analytics Dashboard│
-                  │  + Match Report    │
-                  └────────────────────┘
-
-🛠️ Technology Stack
-Backend
-- Python
-- Flask
-- OpenCV
-- Threading
-- JSON
-Computer Vision
-- YOLOv8
-- OpenCV
-- Object Detection
-- Object Tracking
-Frontend
-- HTML5
-- CSS3
-- JavaScript
-- Flask / Jinja Templates
-Analytics
-- Tactical Decision Support System
-- Player Tracking
-- Team Assignment
-- Ball Possession
-- Passing Analysis
-- Shot Analysis
-- Goal Probability
-- Heatmaps
-📁 Project Structure
-football_tracker/
-│
-├── analytics/
-│
-├── data/
-│   └── videos/
-│
-├── processed/
-│
-├── templates/
-│   ├── index.html
-│   ├── index2.html
-│   ├── match_report.html
-│   ├── match_report_dss.html
-│   ├── match2.html
-│   ├── res2.html
-│   └── result_dss.html
-│
-├── uploads/
-│
-├── app.py
-├── decision_system.py
-├── track_football.py
-├── tracker.py
-├── yolov8n.pt
-├── football-tracker-video.mp4
-├── LICENSE
-└── README.md
-
-⚙️ Installation & Setup
-1. Clone the Repository
+```bash
 git clone https://github.com/Anand3074/football_tracker.git
 cd football_tracker
-
-2. Create a Virtual Environment
-This project uses a dedicated Python virtual environment.
 python3 -m venv venv
-
-3. Activate the Virtual Environment
-macOS / Linux
-source venv/bin/activate
-
-Windows
-venv\Scripts\activate
-
-After activation, you should see:
-(venv)
-
-in your terminal.
-4. Upgrade pip
-python -m pip install --upgrade pip
-
-5. Install Dependencies
-If requirements.txt is available:
+source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-
-Otherwise, install the core dependencies:
-pip install flask opencv-python ultralytics
-
-▶️ Running the Application
-Make sure the virtual environment is activated:
-source venv/bin/activate
-
-Start the application:
 python app.py
+```
 
-You should see:
-🚀 Starting VisionPlay Football Analytics Server with DSS...
-📁 Upload folder: ...
-🎬 Processed folder: ...
-📊 Analytics folder: ...
-🧠 Decision Support System: ENABLED
+Open **http://127.0.0.1:5001** in your browser and upload a football clip.
 
-The application runs on:
-http://127.0.0.1:5001
+---
 
-Open the URL in your browser.
-🖱️ How to Use
-1. Open VisionPlay Pro
-Navigate to:
-http://127.0.0.1:5001
+## 📋 Prerequisites
 
-2. Upload a Football Video
-You can either:
-- Drag and drop a football video
-- Click the upload area and select a video
-Supported formats:
-MP4
-AVI
-MOV
-MKV
+| Requirement | Details |
+|---|---|
+| Python | 3.9 or newer (3.10+ recommended) |
+| pip | Latest version recommended |
+| Git | To clone the repository |
+| Disk space | ~1 GB (PyTorch and Ultralytics dependencies) |
+| Hardware | CPU is enough; a CUDA GPU speeds up processing |
 
-Maximum file size:
-50 MB
+### Python libraries
 
-3. Select Actions
-Select the football actions you want to analyze:
-- ☑ Shooting
-- ☑ Passing
-- ☑ Dribbling
-4. Select Analytics
-Available analytics include:
-- ☑ Player Heatmap
-- ☑ Team Assignment
-- ☑ Ball Possession
-5. Enable DSS Features
-The Decision Support System provides:
-- ☑ Shooting Recommendations
-- ☑ Passing Lane Analysis
-- ☑ Dribbling Opportunities
-- ☑ Game State Awareness
-6. Start Analysis
-Click:
-🚀 Start Analysis with DSS
-The video will be uploaded and processed in the background.
-7. View Processing Results
-After processing, the application displays:
-🎬 Processed Video
-The processed video contains computer-vision overlays and analysis information.
-📊 Match Statistics
-View:
-- Goals
-- Shots
-- Passes
-- Match duration
-- Pass accuracy
-- Shot accuracy
-🧠 DSS Decision Breakdown
-View recommendations such as:
-Shoot
-Pass
-Dribble
-Hold
-Clear
+All dependencies are listed in [`requirements.txt`](requirements.txt):
 
-🎯 Advanced Metrics
-View:
-Average Shot Quality
-Goal Conversion
-Key Events
-Top Possession
+| Library | Purpose |
+|---|---|
+| `flask` | Web server, routing, templates |
+| `opencv-python` | Video reading/writing, frame annotation |
+| `ultralytics` | YOLOv8 detection and ByteTrack tracking (installs PyTorch) |
+| `numpy` | Numerical computations |
 
-📋 Event Timeline
-Review detected football events chronologically.
-📑 Match Report
-VisionPlay Pro can generate a comprehensive match report from the generated analytics data.
-The report consolidates:
-- Match statistics
-- Tactical decisions
-- DSS insights
-- Player information
-- Event information
-- Analytical metrics
-🔌 Application Endpoints
-Endpoint	Method	Purpose
-/	GET / POST	Main application
-/upload	POST	Upload video
-/status/<job_id>	GET	Check processing status
-/video/<filename>	GET	Serve processed video
-/result/<filename>	GET	Display analysis results
-/analytics/<filename>	GET	Serve analytics JSON
-/match_report/<analytics_filename>	GET	Generate match report
-/cleanup	GET / POST	Clean generated files
+The remaining imports (`json`, `threading`, `uuid`, `collections`, `dataclasses`, `enum`, etc.) are part of the Python standard library.
 
+---
 
-🧹 Cleanup
-The application provides a cleanup endpoint for removing generated files.
-It clears files from:
-uploads/
-processed/
-analytics/
+## 🛠 Installation
 
-and resets the current processing status.
-📦 Generated Files
-Each analysis creates unique output files.
-uploads/
-└── <job_id>_<original_video>.mp4
+### 1. Clone the repository
 
-processed/
-└── processed_<job_id>_<video>.mp4
+```bash
+git clone https://github.com/Anand3074/football_tracker.git
+cd football_tracker
+```
 
-analytics/
-└── analytics_<job_id>.json
+### 2. Create a virtual environment
 
-Unique job IDs prevent different uploads from overwriting each other.
-🧠 Architecture
-                    Flask Web Application
-                              │
-                              ▼
-                        Video Upload
-                              │
-                              ▼
-                    Background Processing
-                              │
-                              ▼
-                    YOLOv8 Detection
-                       & Tracking
-                              │
-                              ▼
-                    Football Analytics
-                              │
-                 ┌────────────┼────────────┐
-                 ▼            ▼            ▼
-              Shooting     Passing      Dribbling
-                 │            │            │
-                 └────────────┼────────────┘
-                              ▼
-                   Decision Support System
-                              │
-                ┌─────────────┼─────────────┐
-                ▼             ▼             ▼
-              Shoot          Pass         Dribble
-                              │
-                              ▼
-                       Analytics JSON
-                              │
-                    ┌─────────┴─────────┐
-                    ▼                   ▼
-              Processed Video      Web Dashboard
-                                        │
-                                        ▼
-                                  Match Report
+```bash
+python3 -m venv venv
+```
 
-📸 Screenshots
-VisionPlay Pro Dashboard
- 
-Video Analysis
- 
-DSS Analytics
- 
-Match Report
- 
-🎥 Demo
-A sample football video is included in the repository:
-football-tracker-video.mp4
+### 3. Activate it
 
-Start the application and upload the sample video through the VisionPlay Pro interface.
-🔐 Security Notes
-This project is currently intended for local/development usage.
-Before deploying publicly, consider:
-- Moving the Flask secret key to an environment variable
-- Adding authentication
-- Adding CSRF protection
-- Validating uploaded files
-- Restricting upload size
-- Running Flask behind a production WSGI server
-- Adding access control to generated videos and analytics
-- Adding persistent job storage
-⚠️ Current Limitations
-- Processing speed depends on available hardware
-- Tracking accuracy depends on video quality
-- Camera angle can affect player detection
-- Occlusion can affect tracking
-- Short clips may produce limited statistics
-- Tactical recommendations depend on detected positional information
-- Current upload limit is 50 MB
-🔮 Future Improvements
-- [ ] Real-time live match analysis
-- [ ] GPU acceleration
-- [ ] Persistent database for match analytics
-- [ ] Player profiles
-- [ ] Team performance comparison
-- [ ] Advanced possession models
-- [ ] Pass success prediction
-- [ ] Expected Goals (xG)
-- [ ] Expected Assists (xA)
-- [ ] Player heatmap comparison
-- [ ] Tactical formation detection
-- [ ] Offside detection
-- [ ] Automated match summaries
-- [ ] Multi-camera support
-- [ ] Cloud deployment
-- [ ] REST API
-- [ ] User authentication
-- [ ] Match history dashboard
-👨‍💻 Author
-Anand
-Software Engineer | Full Stack Developer | AI & Computer Vision Enthusiast
-📄 License
-This project is licensed under the MIT License.
-See LICENSE for details.
-⭐ Support
-If you find this project useful or interesting, consider giving the repository a ⭐.
+**macOS / Linux**
+```bash
+source venv/bin/activate
+```
 
-### One important thing
+**Windows (PowerShell / CMD)**
+```bash
+venv\Scripts\activate
+```
 
-Since this is specifically for **GitHub**, save it exactly as:
+You should see `(venv)` at the start of your terminal prompt.
+
+### 4. Upgrade pip
+
+```bash
+python -m pip install --upgrade pip
+```
+
+### 5. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 6. YOLOv8 weights
+
+The app loads `yolov8n.pt` from the project root. The file is included in the repository; if it is missing, Ultralytics downloads it automatically on first run (internet required).
+
+---
+
+## ▶️ Running the Application
+
+Make sure the virtual environment is active, then:
+
+```bash
+python app.py
+```
+
+Expected console output:
 
 ```text
-README.md
+🚀 Starting VisionPlay Football Analytics Server with DSS...
+📁 Upload folder: .../uploads
+🎬 Processed folder: .../processed
+📊 Analytics folder: .../analytics
+🧠 Decision Support System: ENABLED
+```
 
-not .txt, .html, or .markdown.
+The server runs at:
+
+```text
+http://127.0.0.1:5001
+```
+
+Stop it with `Ctrl + C`. Deactivate the virtual environment with `deactivate`.
+
+---
+
+## 🖱 Using the App
+
+1. **Upload** a video (drag and drop or click to browse). Supported: `.mp4`, `.avi`, `.mov`, `.mkv`, up to **50 MB**.
+2. **Select actions** to analyze: Shooting, Passing, Dribbling.
+3. **Select analytics**: Player Heatmap, Team Assignment, Ball Possession.
+4. **Enable DSS features**: Shooting Recommendations, Passing Lane Analysis, Dribbling Opportunities, Game State Awareness.
+5. Click **🚀 Start Analysis with DSS**. Processing runs in the background and the page polls `/status/<job_id>` for progress.
+6. **Review results**: processed video, match statistics, DSS decision breakdown, advanced metrics and the event timeline.
+7. Open the **Match Report** for a consolidated summary.
+
+> **Note:** to keep processing fast, only the **first 10 seconds** of each uploaded video are analyzed (see [Configuration](#-configuration)).
+
+---
+
+## 📁 Required Files
+
+Everything needed to run the project:
+
+```text
+football_tracker/
+│
+├── app.py                    # Flask app: routes, upload, background jobs
+├── track_football.py         # Video pipeline, analytics, JSON + match report
+├── tracker.py                # Tracking, possession, event detection, rendering
+├── decision_system.py        # Decision Support System (tactical engine)
+├── requirements.txt          # Python dependencies
+├── yolov8n.pt                # YOLOv8 nano weights (auto-downloaded if missing)
+│
+├── templates/
+│   ├── index.html            # Upload page
+│   ├── result_dss.html       # Results dashboard with DSS insights
+│   └── match_report_dss.html # Match report
+│
+├── football-tracker-video.mp4  # Sample clip for testing
+├── LICENSE
+└── README.md
+```
+
+Created automatically at runtime: `uploads/`, `processed/`, `analytics/` and a temporary `temp/` folder.
+
+The `templates/` folder also contains earlier template versions (`index2.html`, `match_report.html`, `match2.html`, `res2.html`) that the current app does not use.
+
+| File | Responsibility |
+|---|---|
+| `app.py` | HTTP routes, file validation, background threads, status tracking |
+| `track_football.py` | Orchestrates detection → tracking → events → DSS → output; saves analytics JSON |
+| `tracker.py` | `StableTracker`, `BallPossessionTracker`, `EventDetector`, `VisualRenderer` |
+| `decision_system.py` | `DecisionEngine`, `SpatialAnalyzer`, `GameState`, `DecisionVisualizer` |
+
+---
+
+## ✨ Features
+
+### Computer vision
+- YOLOv8 person and ball detection with ByteTrack tracking
+- Persistent player IDs across frames (labels like `RP35`, `BP23`)
+- Ball tracking with velocity and direction estimation
+- Team assignment (Red / Blue) based on field position
+
+### Football event detection
+- **Passes**: detected from possession-transition patterns
+- **Shots**: detected from ball speed, direction and field zone
+- **Goals**: detected when the ball crosses the goal region
+- **Ball possession**: nearest-player proximity model
+
+### Decision Support System
+- Per-frame tactical recommendations: **Shoot / Pass / Dribble**
+- Confidence, risk and reward scoring for each option
+- Passing-lane analysis with interception checks
+- Game-state awareness (field phase, score, critical moments)
+- Goal probability and shot quality estimation
+
+### Outputs
+- 🎬 Annotated video: bounding boxes, IDs, teams, ball, goal probability bar, DSS panel, passing lanes, live stats
+- 📊 Analytics JSON with events, decisions and summary
+- 🖥 Web dashboard with statistics and event timeline
+- 📑 Match report page
+
+### Example output
+
+```text
+Generated 7 tactical recommendations
+Shoot 0 | Pass 7 | Dribble 0
+Average decision confidence: 72.2%
+
+5.8s   ⚽ Shot by Player 86   41%
+```
+
+---
+
+## 🧠 How It Works
+
+```text
+Upload Video
+     │
+     ▼
+Trim to first 10 seconds
+     │
+     ▼
+YOLOv8 + ByteTrack (players, ball)
+     │
+     ▼
+Possession & Event Detection (pass / shot / goal)
+     │
+     ▼
+Decision Support System (Shoot / Pass / Dribble)
+     │
+     ▼
+Annotated Video  +  Analytics JSON
+     │
+     ▼
+Web Dashboard  →  Match Report
+```
+
+Processing runs in a background thread, so the web interface stays responsive during analysis.
+
+---
+
+## 🎯 Decision Support System
+
+For each frame where a player is in possession, the engine scores the available options with weighted factors:
+
+| Action | Factors |
+|---|---|
+| **Shoot** | Position (35%), angle (25%), defender pressure (20%), game state (15%), confidence (5%) |
+| **Pass** | Safety (30%), progression (30%), opportunity (25%), game state (15%) |
+| **Dribble** | Space (35%), support (25%), pressure (25%), game state (15%) |
+
+The top 3 options are returned with confidence, risk level, reward potential and a short reasoning list. The pitch is divided into tactical zones (defensive, midfield, attacking, danger zone) to inform the scoring. `Hold` and `Clear` are defined in the action set for future extension.
+
+---
+
+## 🔌 API Endpoints
+
+| Endpoint | Method | Purpose |
+|---|---|---|
+| `/` | GET / POST | Main page / form fallback |
+| `/upload` | POST | Upload video and start processing (returns `job_id`) |
+| `/status/<job_id>` | GET | Processing status and progress |
+| `/video/<filename>` | GET | Serve processed video |
+| `/result/<filename>?analytics=<file>` | GET | Results dashboard |
+| `/analytics/<filename>` | GET | Raw analytics JSON |
+| `/match_report/<analytics_filename>` | GET | Match report |
+| `/cleanup` | GET / POST | Delete all generated files and reset status |
+
+Example upload response:
+
+```json
+{
+  "job_id": "…",
+  "message": "Video uploaded successfully. Processing started with DSS...",
+  "output_filename": "processed_<job_id>_<video>.mp4",
+  "analytics_filename": "analytics_<job_id>.json"
+}
+```
+
+---
+
+## 📦 Generated Files
+
+Each job gets a unique ID, so uploads never overwrite each other.
+
+```text
+uploads/    <job_id>_<original_video>.mp4        (deleted after processing)
+processed/  processed_<job_id>_<video>.mp4
+analytics/  analytics_<job_id>.json
+```
+
+Use `/cleanup` to clear `uploads/`, `processed/` and `analytics/`.
+
+---
+
+## ⚙️ Configuration
+
+| Setting | Location | Default |
+|---|---|---|
+| Server port | `app.py` (`app.run`) | `5001` |
+| Max upload size | `app.py` (`MAX_CONTENT_LENGTH`) | 50 MB |
+| Allowed formats | `app.py` (`ALLOWED_EXTENSIONS`) | mp4, avi, mov, mkv |
+| Analyzed duration | `track_football.py` (`trim_video`, `max_duration`) | 10 s |
+| Detection confidence | `track_football.py` (`CONFIDENCE_THRESHOLD`) | 0.3 |
+| Possession distance | `track_football.py` (`proximity_threshold`) | 80 px |
+| YOLO model | `track_football.py` (`YOLO('yolov8n.pt')`) | YOLOv8 nano |
+
+For better accuracy, swap in a larger model such as `yolov8s.pt` or `yolov8m.pt`.
+
+---
+
+## 🩺 Troubleshooting
+
+| Problem | Solution |
+|---|---|
+| `ModuleNotFoundError` | Activate the virtual environment and run `pip install -r requirements.txt` |
+| Processed video is empty or will not play in the browser | Your OpenCV build may lack the `avc1` (H.264) codec. Try `mp4v` in `cv2.VideoWriter_fourcc` or re-encode with FFmpeg |
+| Port 5001 already in use | Change the port in `app.py` |
+| Upload rejected | File must be mp4/avi/mov/mkv and under 50 MB |
+| Slow processing | Use a shorter clip, a GPU, or the `yolov8n.pt` model |
+| ByteTrack dependency error | Run `pip install lap` |
+
+---
+
+## ⚠️ Limitations
+
+- Only the first 10 seconds of a video are analyzed
+- Team assignment uses field position (left/right of midfield), not jersey colour
+- Tracking quality depends on video quality, camera angle and occlusion
+- Pass accuracy is currently fixed at 100% (no pass-success model yet)
+- Match report values for advanced metrics (distance, speed, sprints, duels, etc.) and the opposing team's stats are **simulated placeholders**, not measured from the video
+- Job status is stored in memory and resets when the server restarts
+- Designed for broadcast-style, single-camera footage
+
+---
+
+## 🔮 Roadmap
+
+- [ ] Real player heatmaps from tracked positions
+- [ ] Jersey-colour team classification
+- [ ] Pass success prediction and real pass accuracy
+- [ ] Expected Goals (xG) and Expected Assists (xA)
+- [ ] Replace simulated report metrics with measured ones
+- [ ] Tactical formation and offside detection
+- [ ] GPU acceleration and real-time live analysis
+- [ ] Database for match history and player profiles
+- [ ] REST API and user authentication
+- [ ] Cloud deployment
+
+---
+
+## 🔐 Security Notes
+
+This project is intended for local development. Before deploying publicly:
+
+- Move `app.secret_key` to an environment variable
+- Run with `debug=False` behind a production WSGI server (Gunicorn, Waitress)
+- Add authentication, CSRF protection and access control for videos and analytics
+- Validate uploaded file contents, not just extensions
+- Protect or remove the `/cleanup` endpoint
+- Use persistent job storage
+
+---
+
+## 👨‍💻 Author
+
+**Anand**
+Software Engineer | Full Stack Developer | AI & Computer Vision Enthusiast
+
+GitHub: [@Anand3074](https://github.com/Anand3074)
+
+---
+
+## 📄 License
+
+Released under the [MIT License](LICENSE).
+
+---
+
+⭐ If you find this project useful, consider giving the repository a star.
