@@ -1,0 +1,217 @@
+{
+  "goals": 0,
+  "shots": 1,
+  "passes": 0,
+  "duration": 8.133133133133134,
+  "events": [
+    {
+      "type": "shot",
+      "player": 86,
+      "speed": 38.0096202247299,
+      "position": [
+        783.5449829101562,
+        415.5648193359375
+      ],
+      "direction": [
+        3.17059326171875,
+        0.01702880859375
+      ],
+      "frame": 52,
+      "time": 5.797464130797464,
+      "probability": 40.54162778535477
+    }
+  ],
+  "pass_events": [],
+  "shot_events": [
+    {
+      "type": "shot",
+      "player": 86,
+      "speed": 38.0096202247299,
+      "position": [
+        783.5449829101562,
+        415.5648193359375
+      ],
+      "direction": [
+        3.17059326171875,
+        0.01702880859375
+      ],
+      "frame": 52,
+      "time": 5.797464130797464,
+      "probability": 40.54162778535477
+    }
+  ],
+  "goal_events": [],
+  "decisions": [
+    {
+      "frame": 139,
+      "time": 5.797464130797464,
+      "recommended_action": "pass",
+      "confidence": 72.17398081885443,
+      "possessor": 86,
+      "options": [
+        {
+          "action": "pass",
+          "confidence": 72.17398081885443,
+          "target_player": 112
+        },
+        {
+          "action": "dribble",
+          "confidence": 58.29462766647339,
+          "target_player": null
+        }
+      ]
+    },
+    {
+      "frame": 140,
+      "time": 5.839172505839173,
+      "recommended_action": "pass",
+      "confidence": 72.27522503005133,
+      "possessor": 86,
+      "options": [
+        {
+          "action": "pass",
+          "confidence": 72.27522503005133,
+          "target_player": 112
+        },
+        {
+          "action": "dribble",
+          "confidence": 58.19278287887573,
+          "target_player": null
+        }
+      ]
+    },
+    {
+      "frame": 141,
+      "time": 5.8808808808808815,
+      "recommended_action": "pass",
+      "confidence": 72.33200605710347,
+      "possessor": 86,
+      "options": [
+        {
+          "action": "pass",
+          "confidence": 72.33200605710347,
+          "target_player": 112
+        },
+        {
+          "action": "dribble",
+          "confidence": 58.134984493255615,
+          "target_player": null
+        }
+      ]
+    },
+    {
+      "frame": 142,
+      "time": 5.922589255922589,
+      "recommended_action": "pass",
+      "confidence": 72.34753179550171,
+      "possessor": 86,
+      "options": [
+        {
+          "action": "pass",
+          "confidence": 72.34753179550171,
+          "target_player": 112
+        },
+        {
+          "action": "dribble",
+          "confidence": 58.12098217010498,
+          "target_player": null
+        }
+      ]
+    },
+    {
+      "frame": 143,
+      "time": 5.964297630964298,
+      "recommended_action": "pass",
+      "confidence": 72.28954956266615,
+      "possessor": 86,
+      "options": [
+        {
+          "action": "pass",
+          "confidence": 72.28954956266615,
+          "target_player": 112
+        },
+        {
+          "action": "dribble",
+          "confidence": 58.132758140563965,
+          "target_player": null
+        }
+      ]
+    },
+    {
+      "frame": 144,
+      "time": 6.0060060060060065,
+      "recommended_action": "pass",
+      "confidence": 72.12959249814351,
+      "possessor": 86,
+      "options": [
+        {
+          "action": "pass",
+          "confidence": 72.12959249814351,
+          "target_player": 112
+        },
+        {
+          "action": "dribble",
+          "confidence": 58.16523218154907,
+          "target_player": null
+        }
+      ]
+    },
+    {
+      "frame": 147,
+      "time": 6.131131131131132,
+      "recommended_action": "pass",
+      "confidence": 71.85175241364374,
+      "possessor": 86,
+      "options": [
+        {
+          "action": "pass",
+          "confidence": 71.85175241364374,
+          "target_player": 112
+        },
+        {
+          "action": "dribble",
+          "confidence": 58.53036904335022,
+          "target_player": null
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "total_passes": 0,
+    "total_shots": 1,
+    "total_goals": 0,
+    "total_decisions": 7,
+    "decision_breakdown": {
+      "shoot": 0,
+      "pass": 7,
+      "dribble": 0,
+      "hold": 0,
+      "clear": 0
+    },
+    "key_events": 1,
+    "avg_goal_probability": 40.5,
+    "pass_accuracy": 100.0,
+    "shot_accuracy": 0.0,
+    "possession_distribution": {
+      "player_86": 100.0
+    }
+  },
+  "dss_insights": {
+    "summary": "Generated 7 tactical recommendations",
+    "decision_distribution": {
+      "shoot": 0,
+      "pass": 7,
+      "dribble": 0,
+      "hold": 0,
+      "clear": 0
+    },
+    "most_frequent": "pass",
+    "possession_based_decisions": 7,
+    "recommendations": [
+      "Player maintains good spatial awareness with 7 passing opportunities identified",
+      "Shooting opportunities detected: 0 times with varying goal probabilities",
+      "Dribbling recommended in 0 situations with available space",
+      "Average decision confidence: 72.2%"
+    ]
+  }
+}

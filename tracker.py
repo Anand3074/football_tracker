@@ -1,10 +1,6 @@
-"""
-Improved tracking system with stable IDs and smooth detection
-"""
 import numpy as np
 from collections import defaultdict, deque
 import cv2
-
 
 class StableTracker:
     """Manages stable player and ball tracking with consistent IDs"""
@@ -13,12 +9,12 @@ class StableTracker:
         self.history_length = history_length
         self.track_positions = defaultdict(lambda: deque(maxlen=history_length))
         self.track_velocities = defaultdict(lambda: deque(maxlen=history_length))
-        self.track_classes = {}  # Store class for each track_id
+        self.track_classes = {}
         self.track_confidences = defaultdict(lambda: deque(maxlen=10))
         self.team_assignments = {}  # Stable team assignments
-        self.last_seen = {}  # Frame number when track was last seen
+        self.last_seen = {}
         self.current_frame = 0
-        
+    
     def update(self, boxes, frame_shape, fps=30):
         """Update all tracks with new detections"""
         self.current_frame += 1
@@ -26,8 +22,27 @@ class StableTracker:
         
         if boxes is None or len(boxes) == 0:
             return current_tracks
-            
+        
+        # First pass: collect all positions for team assignment
+        positions = []
+        valid_boxes = []
+        
         for box in boxes:
+            if box.id is not None:
+                valid_boxes.append(box)
+                x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
+                center_x = float((x1 + x2) / 2)
+                center_y = float((y1 + y2) / 2)
+                positions.append((center_x, center_y, int(box.cls), int(box.id)))
+        
+        # Sort positions by x coordinate for team assignment
+        positions.sort(key=lambda x: x[0])
+        
+        # Calculate team split point (midfield line)
+        midfield_x = frame_shape[1] / 2
+        
+        # Process each box
+        for box in valid_boxes:
             track_id = int(box.id)
             cls_id = int(box.cls)
             conf = float(box.conf)
@@ -43,7 +58,7 @@ class StableTracker:
             self.last_seen[track_id] = self.current_frame
             self.track_confidences[track_id].append(conf)
             
-            # Calculate velocity using smoothed positions
+            # Calculate velocity
             prev_positions = list(self.track_positions[track_id])
             if len(prev_positions) > 0:
                 prev_x, prev_y = prev_positions[-1]
@@ -57,10 +72,20 @@ class StableTracker:
             # Update position history
             self.track_positions[track_id].append((center_x, center_y))
             
-            # Assign team for players on first detection
-            if cls_id == 0 and track_id not in self.team_assignments:
-                # Simple team assignment based on horizontal position
-                self.team_assignments[track_id] = 0 if center_x < frame_shape[1] / 2 else 1
+            # Assign team for players
+            if cls_id == 0:
+                if track_id not in self.team_assignments:
+                    # Use persistent team assignment based on historical position
+                    team = 0 if center_x < midfield_x else 1
+                    self.team_assignments[track_id] = team
+                elif len(self.track_positions[track_id]) > 10:
+                    # Re-evaluate team if player has moved significantly
+                    avg_x = np.mean([p[0] for p in list(self.track_positions[track_id])[-10:]])
+                    if avg_x < midfield_x - 50:
+                        self.team_assignments[track_id] = 0
+                    elif avg_x > midfield_x + 50:
+                        self.team_assignments[track_id] = 1
+                    # Keep current assignment if near midfield
             
             # Build current track info
             current_tracks[track_id] = {
@@ -69,7 +94,7 @@ class StableTracker:
                 'class': cls_id,
                 'confidence': conf,
                 'velocity': self.get_avg_velocity(track_id),
-                'team': self.team_assignments.get(track_id, -1)
+                'team': self.team_assignments.get(track_id, -1) if cls_id == 0 else -1
             }
         
         return current_tracks
@@ -99,24 +124,29 @@ class StableTracker:
         return sum(confs) / len(confs) if confs else 0.0
     
     def is_stable(self, track_id, min_frames=5):
-        """Check if track is stable (seen for minimum frames)"""
+        """Check if track is stable"""
         return len(self.track_positions[track_id]) >= min_frames
 
 
 class BallPossessionTracker:
-    """Tracks which player has ball possession"""
+    """IMPROVED: Tracks ball possession with better pass detection"""
     
-    def __init__(self, proximity_threshold=80, history_length=15):
+    def __init__(self, proximity_threshold=80, history_length=60):
         self.proximity_threshold = proximity_threshold
         self.history_length = history_length
         self.possession_history = deque(maxlen=history_length)
         self.possession_durations = defaultdict(int)
         self.current_possessor = None
+        self.last_possessor = None  # Last non-None possessor
+        self.frames_since_change = 0
+        self.frames_in_flight = 0  # Track how long ball has been in flight
         
     def update(self, ball_pos, player_tracks):
-        """Update ball possession based on proximity"""
+        """Update ball possession with improved tracking"""
         if ball_pos is None:
             self.possession_history.append(None)
+            self.current_possessor = None
+            self.frames_in_flight += 1
             return None
         
         closest_player = None
@@ -124,9 +154,6 @@ class BallPossessionTracker:
         
         # Find closest player to ball
         for track_id, data in player_tracks.items():
-            if data['class'] != 0:  # Skip non-players
-                continue
-                
             player_pos = data['position']
             distance = np.sqrt(
                 (ball_pos[0] - player_pos[0])**2 + 
@@ -138,77 +165,151 @@ class BallPossessionTracker:
                 closest_player = track_id
         
         # Update possession
-        self.current_possessor = closest_player
-        self.possession_history.append(closest_player)
+        previous_possessor = self.current_possessor
         
         if closest_player is not None:
+            # Someone has the ball
+            self.current_possessor = closest_player
+            self.last_possessor = closest_player
             self.possession_durations[closest_player] += 1
-        
-        return closest_player
-    
-    def get_previous_possessor(self, frames_back=3):
-        """Get who had possession N frames ago"""
-        history = list(self.possession_history)
-        if len(history) < frames_back + 1:
-            return None
-        return history[-(frames_back + 1)]
-    
-    def possession_changed(self):
-        """Check if possession just changed"""
-        history = list(self.possession_history)
-        if len(history) < 2:
-            return False
-        return history[-1] != history[-2] and history[-1] is not None and history[-2] is not None
-
-
-class EventDetector:
-    """Detects football events: passes, shots, goals"""
-    
-    def __init__(self, frame_shape):
-        self.frame_shape = frame_shape
-        self.pass_cooldown = {}  # Prevent duplicate pass detection
-        self.shot_cooldown = {}  # Prevent duplicate shot detection
-        self.cooldown_frames = 15
-        self.current_frame = 0
-        
-    def detect_pass(self, possessor, previous_possessor, ball_velocity, ball_pos):
-        """Detect completed pass between players"""
-        self.current_frame += 1
-        
-        if possessor is None or previous_possessor is None:
-            return None
-        
-        if possessor == previous_possessor:
-            return None
-        
-        # Check cooldown to prevent duplicate detections
-        cooldown_key = (previous_possessor, possessor)
-        if cooldown_key in self.pass_cooldown:
-            if self.current_frame - self.pass_cooldown[cooldown_key] < self.cooldown_frames:
-                return None
-        
-        # Pass criteria: ball moved with sufficient speed
-        if ball_velocity > 8.0:  # Minimum speed threshold
-            self.pass_cooldown[cooldown_key] = self.current_frame
+            self.frames_in_flight = 0
             
-            return {
-                'type': 'pass',
-                'from_player': previous_possessor,
-                'to_player': possessor,
-                'speed': float(ball_velocity),
-                'position': [float(ball_pos[0]), float(ball_pos[1])],
-                'frame': self.current_frame
-            }
+            if previous_possessor != closest_player:
+                self.frames_since_change = 0
+            else:
+                self.frames_since_change += 1
+        else:
+            # Ball is in flight/transit
+            self.current_possessor = None
+            self.frames_in_flight += 1
+            self.frames_since_change += 1
+        
+        self.possession_history.append(self.current_possessor)
+        return self.current_possessor
+    
+    def get_potential_pass(self):
+        """
+        IMPROVED: Detect potential pass by looking at possession pattern
+        Returns (from_player, to_player) if a pass is detected
+        """
+        if len(self.possession_history) < 5:
+            return None
+        
+        # Get recent history (last 30 frames = 1 second)
+        recent = list(self.possession_history)[-30:]
+        
+        # Find non-None values
+        possessors = [p for p in recent if p is not None]
+        
+        if len(possessors) < 2:
+            return None
+        
+        # Check if we have a clear transition from one player to another
+        # Pattern: [P1, P1, ..., None, None, ..., P2, P2]
+        from_player = possessors[0]
+        to_player = possessors[-1]
+        
+        # Must be different players
+        if from_player == to_player:
+            return None
+        
+        # Check if recent possession shows this transition
+        # Look for pattern where first half has from_player, second half has to_player
+        first_half = possessors[:len(possessors)//2]
+        second_half = possessors[len(possessors)//2:]
+        
+        # Count occurrences
+        from_count_first = first_half.count(from_player)
+        to_count_second = second_half.count(to_player)
+        
+        # If pattern is clear (dominant player in each half)
+        if from_count_first >= len(first_half) * 0.6 and to_count_second >= len(second_half) * 0.6:
+            return (from_player, to_player)
         
         return None
     
-    def detect_shot(self, possessor, ball_velocity, ball_pos, ball_direction):
-        """Detect shot on goal"""
-        if ball_velocity < 15.0:  # Minimum shot speed
+    def just_received_ball(self):
+        """Check if current possessor just received the ball (within last 5 frames)"""
+        return self.current_possessor is not None and self.frames_since_change < 5
+
+
+class EventDetector:
+    """IMPROVED: Detects football events with better pass detection"""
+    
+    def __init__(self, frame_shape):
+        self.frame_shape = frame_shape
+        self.detected_passes = set()  # Track (from, to, frame_range) to avoid duplicates
+        self.shot_cooldown = {}
+        self.cooldown_frames = 30
+        self.current_frame = 0
+        self.last_pass_frame = 0
+        
+    def detect_pass(self, possession_tracker, player_tracks, ball_pos, ball_velocity, current_time):
+        """
+        IMPROVED: Detect pass with better logic
+        """
+        self.current_frame += 1
+        
+        if ball_pos is None:
             return None
         
-        # Check if ball is moving towards goal (right side of field)
-        if ball_direction[0] <= 0:  # Not moving towards goal
+        # Check if there's a potential pass pattern
+        pass_info = possession_tracker.get_potential_pass()
+        if pass_info is None:
+            return None
+        
+        from_player, to_player = pass_info
+        
+        # Avoid detecting same pass multiple times
+        frame_window = 20  # Only detect same pass once per 20 frames
+        pass_signature = (from_player, to_player, self.current_frame // frame_window)
+        
+        if pass_signature in self.detected_passes:
+            return None
+        
+        # Check if players are in tracks
+        if from_player not in player_tracks or to_player not in player_tracks:
+            return None
+        
+        # Calculate distance between players
+        p1_pos = player_tracks[from_player]['position']
+        p2_pos = player_tracks[to_player]['position']
+        dist = np.sqrt((p1_pos[0] - p2_pos[0])**2 + (p1_pos[1] - p2_pos[1])**2)
+        
+        # Minimum pass distance (changed from 100 to 50 for shorter passes)
+        if dist < 50:
+            return None
+        
+        # Check minimum time between passes
+        if self.current_frame - self.last_pass_frame < 10:
+            return None
+        
+        # Register the pass
+        self.detected_passes.add(pass_signature)
+        self.last_pass_frame = self.current_frame
+        
+        # Clean old pass signatures
+        if len(self.detected_passes) > 100:
+            self.detected_passes.clear()
+        
+        return {
+            'type': 'pass',
+            'from_player': from_player,
+            'to_player': to_player,
+            'speed': float(ball_velocity),
+            'distance': float(dist),
+            'position': [float(ball_pos[0]), float(ball_pos[1])],
+            'frame': self.current_frame,
+            'time': float(current_time)
+        }
+    
+    def detect_shot(self, possessor, ball_velocity, ball_pos, ball_direction, current_time):
+        """Detect shot on goal"""
+        if ball_velocity < 15.0:
+            return None
+        
+        # Check if ball is moving towards goal
+        if ball_direction[0] <= 0:
             return None
         
         # Check if in attacking third
@@ -228,7 +329,8 @@ class EventDetector:
             'speed': float(ball_velocity),
             'position': [float(ball_pos[0]), float(ball_pos[1])],
             'direction': [float(ball_direction[0]), float(ball_direction[1])],
-            'frame': self.current_frame
+            'frame': self.current_frame,
+            'time': float(current_time)
         }
     
     def calculate_goal_probability(self, ball_pos, ball_velocity, ball_direction, defenders_nearby):
@@ -238,20 +340,20 @@ class EventDetector:
         # Base probability from position
         x_normalized = ball_pos[0] / w
         if x_normalized < 0.5:
-            prob = 5  # Midfield
+            prob = 5
         elif x_normalized < 0.7:
-            prob = 20  # Approaching
+            prob = 20
         elif x_normalized < 0.85:
-            prob = 45  # Attacking third
+            prob = 45
         else:
-            prob = 70  # Very close
+            prob = 70
         
-        # Angle to goal center
+        # Angle to goal
         goal_center = (w, h / 2)
         dx = goal_center[0] - ball_pos[0]
         dy = goal_center[1] - ball_pos[1]
         
-        if dx > 0:  # Ball before goal
+        if dx > 0:
             angle = abs(np.arctan2(dy, dx))
             angle_penalty = min(30, angle * 40)
             prob -= angle_penalty
@@ -262,7 +364,7 @@ class EventDetector:
         elif ball_velocity > 15:
             prob += 8
         
-        # Direction bonus (moving towards goal)
+        # Direction bonus
         if ball_direction[0] > 0:
             prob += 10
         
@@ -276,7 +378,6 @@ class EventDetector:
         """Check if ball crossed goal line"""
         h, w = self.frame_shape[:2]
         
-        # Goal area (right side, centered vertically)
         goal_y_min = h * 0.35
         goal_y_max = h * 0.65
         goal_x_threshold = w * 0.95
@@ -289,7 +390,7 @@ class EventDetector:
 
 
 class VisualRenderer:
-    """Handles all visual rendering with smooth annotations"""
+    """IMPROVED: Handles all visual rendering with continuous DSS display"""
     
     def __init__(self):
         self.colors = {
@@ -300,7 +401,7 @@ class VisualRenderer:
             'pass': (255, 255, 0),      # Cyan
             'shot': (100, 100, 255)     # Red
         }
-        
+    
     def draw_player(self, frame, track_id, data, has_possession=False, action=None):
         """Draw player bounding box and label"""
         x1, y1, x2, y2 = data['bbox']
@@ -308,36 +409,38 @@ class VisualRenderer:
         # Choose color
         if has_possession:
             color = self.colors['possession']
+            thickness = 3
         elif action == 'pass':
             color = self.colors['pass']
+            thickness = 2
         elif action == 'shot':
             color = self.colors['shot']
+            thickness = 2
         else:
             team = data.get('team', -1)
             color = self.colors.get(f'team_{team}', (200, 200, 200))
+            thickness = 2 if data['confidence'] > 0.5 else 1
         
-        # Draw box with thickness based on confidence
-        thickness = 2 if data['confidence'] > 0.5 else 1
+        # Draw box
         cv2.rectangle(frame, (x1, y1), (x2, y2), color, thickness)
         
         # Label
-        team_emoji = '🔴' if data.get('team') == 0 else '🔵' if data.get('team') == 1 else ''
-        label = f"{team_emoji}P{track_id}"
+        team_marker = 'R' if data.get('team') == 0 else 'B' if data.get('team') == 1 else ''
+        label = f"{team_marker}P{track_id}"
         if action:
             label += f" {action.upper()}"
         
         # Draw label background
-        (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
-        cv2.rectangle(frame, (x1, y1 - th - 10), (x1 + tw + 10, y1), color, -1)
-        cv2.putText(frame, label, (x1 + 5, y1 - 5), 
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+        (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)
+        cv2.rectangle(frame, (x1, y1 - th - 8), (x1 + tw + 8, y1), color, -1)
+        cv2.putText(frame, label, (x1 + 4, y1 - 4), 
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
     
     def draw_ball(self, frame, data):
         """Draw ball with trail"""
         x1, y1, x2, y2 = data['bbox']
         center = ((x1 + x2) // 2, (y1 + y2) // 2)
         
-        # Draw circle
         cv2.circle(frame, center, 8, self.colors['ball'], -1)
         cv2.circle(frame, center, 10, (255, 255, 255), 2)
     
@@ -345,17 +448,14 @@ class VisualRenderer:
         """Draw goal post area"""
         h, w = frame.shape[:2]
         
-        # Goal coordinates
         goal_x = int(w * 0.95)
         goal_y1 = int(h * 0.35)
         goal_y2 = int(h * 0.65)
         
-        color = (0, 255, 255)  # Yellow
+        color = (0, 255, 255)
         
-        # Draw goal posts
         cv2.line(frame, (goal_x, goal_y1), (goal_x, goal_y2), color, 3)
         
-        # Draw net pattern
         for i in range(goal_y1, goal_y2, 20):
             cv2.line(frame, (goal_x, i), (w, i), color, 1)
     
@@ -363,59 +463,51 @@ class VisualRenderer:
         """Draw stats overlay at top"""
         h, w = frame.shape[:2]
         
-        # Semi-transparent background
         overlay = frame.copy()
-        cv2.rectangle(overlay, (0, 0), (w, 100), (20, 20, 20), -1)
-        cv2.addWeighted(overlay, 0.5, frame, 0.5, 0, frame)
+        cv2.rectangle(overlay, (0, 0), (w, 80), (20, 20, 20), -1)
+        cv2.addWeighted(overlay, 0.6, frame, 0.4, 0, frame)
         
-        # Draw stats
         texts = [
-            f"⚽ Goals: {stats.get('goals', 0)}",
-            f"🎯 Shots: {stats.get('shots', 0)}",
-            f"🔄 Passes: {stats.get('passes', 0)}",
-            f"⏱️ {stats.get('time', '0.0')}s"
+            f"Goals: {stats.get('goals', 0)}",
+            f"Shots: {stats.get('shots', 0)}",
+            f"Passes: {stats.get('passes', 0)}",
+            f"Time: {stats.get('time', '0.0')}s"
         ]
         
         x_offset = 20
         for text in texts:
-            cv2.putText(frame, text, (x_offset, 40),
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-            x_offset += 250
+            cv2.putText(frame, text, (x_offset, 35),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+            x_offset += 220
     
     def draw_goal_probability_bar(self, frame, probability):
-        """Draw prominent goal probability bar"""
+        """Draw goal probability bar"""
         h, w = frame.shape[:2]
         
-        # Bar dimensions
-        bar_width = 400
-        bar_height = 35
-        bar_x = w - bar_width - 30
-        bar_y = 120
+        bar_width = 300
+        bar_height = 25
+        bar_x = w - bar_width - 20
+        bar_y = 100
         
-        # Background
-        cv2.rectangle(frame, (bar_x - 5, bar_y - 5),
-                     (bar_x + bar_width + 5, bar_y + bar_height + 5),
+        cv2.rectangle(frame, (bar_x - 3, bar_y - 3),
+                     (bar_x + bar_width + 3, bar_y + bar_height + 3),
                      (255, 255, 255), -1)
         cv2.rectangle(frame, (bar_x, bar_y),
                      (bar_x + bar_width, bar_y + bar_height),
                      (60, 60, 60), -1)
         
-        # Filled portion with gradient
         fill_width = int(bar_width * (probability / 100))
         for i in range(fill_width):
             ratio = i / bar_width
-            # Green to red gradient
             r = int(255 * ratio)
             g = int(255 * (1 - ratio))
             b = 0
             cv2.line(frame, (bar_x + i, bar_y),
                     (bar_x + i, bar_y + bar_height), (b, g, r), 1)
         
-        # Label and percentage
-        label = "GOAL PROBABILITY"
-        cv2.putText(frame, label, (bar_x, bar_y - 15),
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+        cv2.putText(frame, "GOAL %", (bar_x, bar_y - 10),
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
         
         pct_text = f"{probability:.0f}%"
-        cv2.putText(frame, pct_text, (bar_x + bar_width//2 - 30, bar_y + 25),
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+        cv2.putText(frame, pct_text, (bar_x + bar_width//2 - 25, bar_y + 18),
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)

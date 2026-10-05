@@ -5,6 +5,7 @@ import json
 import threading
 from werkzeug.utils import secure_filename
 from track_football import process_video, generate_match_report
+import cv2  # Added
 
 # --- Configuration ---
 UPLOAD_FOLDER = 'uploads'
@@ -33,9 +34,9 @@ processing_status = {}
 def process_video_async(input_path, output_path, selected_actions, selected_analytics, analytics_path, job_id):
     """Process video in background thread with progress updates"""
     try:
-        processing_status[job_id] = {'status': 'processing', 'progress': 10, 'message': 'Starting video analysis...'}
+        processing_status[job_id] = {'status': 'processing', 'progress': 10, 'message': 'Starting video analysis with DSS...'}
         
-        # Process the video
+        # Process the video with DSS
         success = process_video(
             input_path, 
             output_path, 
@@ -45,8 +46,8 @@ def process_video_async(input_path, output_path, selected_actions, selected_anal
         )
         
         if success:
-            processing_status[job_id] = {'status': 'completed', 'progress': 100, 'message': 'Analysis complete!'}
-            print(f"✅ Processing completed for job {job_id}")
+            processing_status[job_id] = {'status': 'completed', 'progress': 100, 'message': 'Analysis complete! DSS recommendations available.'}
+            print(f"✅ Processing completed for job {job_id} with DSS")
         else:
             processing_status[job_id] = {'status': 'error', 'progress': 0, 'message': 'Analysis failed'}
             print(f"❌ Processing failed for job {job_id}")
@@ -163,7 +164,7 @@ def upload_video():
         
         return jsonify({
             'job_id': job_id,
-            'message': 'Video uploaded successfully. Processing started...',
+            'message': 'Video uploaded successfully. Processing started with DSS...',
             'output_filename': output_filename,
             'analytics_filename': analytics_filename
         })
@@ -235,7 +236,7 @@ def serve_video(filename):
            
 @app.route('/result/<filename>')
 def show_video(filename):
-    """Display the processed video with analytics"""
+    """Display the processed video with analytics and DSS insights"""
     analytics_filename = request.args.get('analytics', '')
     video_url = url_for('serve_video', filename=filename)
     
@@ -250,9 +251,10 @@ def show_video(filename):
             try:
                 with open(analytics_path, 'r') as f:
                     analytics_data = json.load(f)
-                print(f"✅ Loaded analytics data with keys: {list(analytics_data.keys())}")
-                if 'summary' in analytics_data:
-                    print(f"📋 Summary data: {analytics_data['summary']}")
+                print(f"✅ Loaded analytics data with DSS insights")
+                print(f"📋 DSS Decision count: {analytics_data.get('summary', {}).get('total_decisions', 0)}")
+                if 'dss_insights' in analytics_data:
+                    print(f"🧠 DSS Insights available")
             except Exception as e:
                 print(f"❌ Error loading analytics: {e}")
                 analytics_data = {}
@@ -266,7 +268,7 @@ def show_video(filename):
         flash('Processed video not found. Please try analyzing again.')
         return redirect(url_for('index'))
     
-    return render_template('result.html', 
+    return render_template('result_dss.html',  # Use the new DSS-enhanced template
                          video_url=video_url, 
                          filename=filename,
                          analytics_data=analytics_data)
@@ -314,7 +316,7 @@ def cleanup():
 
 @app.route('/match_report/<analytics_filename>')
 def match_report(analytics_filename):
-    """Generate comprehensive match report"""
+    """Generate comprehensive match report with DSS insights"""
     try:
         analytics_path = os.path.join(app.config['ANALYTICS_FOLDER'], analytics_filename)
         if os.path.exists(analytics_path):
@@ -322,15 +324,16 @@ def match_report(analytics_filename):
                 analytics_data = json.load(f)
             
             report_data = generate_match_report(analytics_data)
-            return render_template('match_report.html', report=report_data)
+            return render_template('match_report_dss.html', report=report_data)  # Use DSS-enhanced report template
         else:
             return jsonify({'error': 'Analytics data not found'}), 404
     except Exception as e:
         return jsonify({'error': f'Error generating report: {str(e)}'}), 500
 
 if __name__ == '__main__':
-    print("🚀 Starting VisionPlay Football Analytics Server...")
+    print("🚀 Starting VisionPlay Football Analytics Server with DSS...")
     print(f"📁 Upload folder: {os.path.abspath(UPLOAD_FOLDER)}")
     print(f"🎬 Processed folder: {os.path.abspath(PROCESSED_FOLDER)}")
     print(f"📊 Analytics folder: {os.path.abspath(ANALYTICS_FOLDER)}")
+    print(f"🧠 Decision Support System: ENABLED")
     app.run(debug=True, host='0.0.0.0', port=5001)

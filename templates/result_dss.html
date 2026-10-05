@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VisionTrack - Analysis Results with DSS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .nav-btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: transform 0.3s;
+            border: 2px solid white;
+        }
+        
+        .nav-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .video-section {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        
+        .video-container video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 10px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: transform 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-card h3 {
+            margin-bottom: 15px;
+            color: #ffd700;
+            font-size: 20px;
+            border-bottom: 2px solid rgba(255,255,255,0.3);
+            padding-bottom: 10px;
+        }
+        
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+        
+        .stat-label {
+            color: rgba(255,255,255,0.8);
+        }
+        
+        .stat-value {
+            font-weight: bold;
+            color: white;
+        }
+        
+        .dss-section {
+            margin-top: 30px;
+        }
+        
+        .dss-card {
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        
+        .decision-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .decision-item {
+            background: rgba(255,255,255,0.15);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .action-shoot {
+            color: #ff6b6b;
+            font-size: 24px;
+        }
+        
+        .action-pass {
+            color: #feca57;
+            font-size: 24px;
+        }
+        
+        .action-dribble {
+            color: #48dbfb;
+            font-size: 24px;
+        }
+        
+        .confidence-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4cd964, #5ac8fa);
+            border-radius: 4px;
+            transition: width 0.3s;
+        }
+        
+        .timeline-section {
+            margin-top: 30px;
+        }
+        
+        .event-timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .event-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+        }
+        
+        .event-time {
+            min-width: 80px;
+            color: #ffd700;
+            font-weight: bold;
+        }
+        
+        .event-icon {
+            width: 40px;
+            text-align: center;
+            font-size: 20px;
+        }
+        
+        .event-desc {
+            flex: 1;
+            margin-left: 10px;
+        }
+        
+        .event-probability {
+            padding: 4px 12px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 15px;
+            font-size: 14px;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .dss-badge {
+            animation: pulse 2s infinite;
+        }
+        
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        
+        .loading.active {
+            display: flex;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .report-btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s;
+            margin-left: 15px;
+        }
+        
+        .report-btn:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p style="margin-top: 20px; color: white; font-size: 18px;">Generating Match Report...</p>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <div class="logo">⚽ VisionPlay Pro - DSS</div>
+            <div>
+                <span class="dss-badge" style="background: #3498db; padding: 8px 16px; border-radius: 20px; margin-right: 15px;">
+                    🤖 Decision Support System Active
+                </span>
+                <a href="/" class="nav-btn">← Analyze New Video</a>
+                <button onclick="generateMatchReport()" class="report-btn">📊 Full Match Report</button>
+            </div>
+        </div>
+
+        <div class="video-section">
+            <h2 style="margin-bottom: 15px;">📹 Analysis Results</h2>
+            <div class="video-container">
+                <video controls autoplay loop>
+                    <source src="{{ video_url }}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <!-- Match Statistics -->
+            <div class="stat-card">
+                <h3>📊 Match Statistics</h3>
+                <div class="stat-row">
+                    <span class="stat-label">Total Goals:</span>
+                    <span class="stat-value">{{ analytics_data.get('goals', 0) }}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Total Shots:</span>
+                    <span class="stat-value">{{ analytics_data.get('shots', 0) }}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Total Passes:</span>
+                    <span class="stat-value">{{ analytics_data.get('passes', 0) }}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Match Duration:</span>
+                    <span class="stat-value">{{ "%.1f"|format(analytics_data.get('duration', 0)) }}s</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Pass Accuracy:</span>
+                    <span class="stat-value">{{ "%.1f"|format(analytics_data.get('summary', {}).get('pass_accuracy', 0)) }}%</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Shot Accuracy:</span>
+                    <span class="stat-value">{{ "%.1f"|format(analytics_data.get('summary', {}).get('shot_accuracy', 0)) }}%</span>
+                </div>
+            </div>
+
+            <!-- DSS Decision Breakdown -->
+            <div class="stat-card">
+                <h3>🤖 DSS Decision Breakdown</h3>
+                {% set decisions = analytics_data.get('summary', {}).get('decision_breakdown', {}) %}
+                <div class="stat-row">
+                    <span class="stat-label">Total Decisions:</span>
+                    <span class="stat-value">{{ analytics_data.get('summary', {}).get('total_decisions', 0) }}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">⚽ Shoot:</span>
+                    <span class="stat-value">{{ decisions.get('shoot', 0) }}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">🔄 Pass:</span>
+                    <span class="stat-value">{{ decisions.get('pass', 0) }}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">🏃 Dribble:</span>
+                    <span class="stat-value">{{ decisions.get('dribble', 0) }}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">⏱️ Hold:</span>
+                    <span class="stat-value">{{ decisions.get('hold', 0) }}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">🛡️ Clear:</span>
+                    <span class="stat-value">{{ decisions.get('clear', 0) }}</span>
+                </div>
+            </div>
+
+            <!-- Advanced Metrics -->
+            <div class="stat-card">
+                <h3>🎯 Advanced Metrics</h3>
+                <div class="stat-row">
+                    <span class="stat-label">Avg Shot Quality:</span>
+                    <span class="stat-value">{{ "%.1f"|format(analytics_data.get('summary', {}).get('avg_goal_probability', 0)) }}%</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Goal Conversion:</span>
+                    <span class="stat-value">
+                        {% if analytics_data.get('shots', 0) > 0 %}
+                            {{ "%.1f"|format((analytics_data.get('goals', 0) / analytics_data.get('shots', 0) * 100)) }}%
+                        {% else %}
+                            0%
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Key Events:</span>
+                    <span class="stat-value">{{ analytics_data.get('summary', {}).get('key_events', 0) }}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Top Possession:</span>
+                    <span class="stat-value">
+                        {% set possession = analytics_data.get('summary', {}).get('possession_distribution', {}) %}
+                        {% if possession %}
+                            {% set top_player = possession.items()|first %}
+                            {{ top_player[0] }} ({{ "%.1f"|format(top_player[1]) }}%)
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- DSS Insights Section -->
+        <div class="dss-section">
+            <h2 style="margin-bottom: 20px;">🧠 Tactical Decision Support System</h2>
+            
+            {% set dss_insights = analytics_data.get('dss_insights', {}) %}
+            
+            <div class="dss-card">
+                <h3 style="color: white; margin-bottom: 15px;">📋 Decision Summary</h3>
+                <p style="font-size: 16px; margin-bottom: 20px;">{{ dss_insights.get('summary', 'No DSS data available') }}</p>
+                
+                <div class="decision-row">
+                    <div class="decision-item">
+                        <div class="action-shoot">⚽</div>
+                        <h4 style="margin: 10px 0; color: white;">Shoot</h4>
+                        <p style="font-size: 24px; font-weight: bold;">{{ dss_insights.get('decision_distribution', {}).get('shoot', 0) }}</p>
+                        <p style="color: rgba(255,255,255,0.8);">recommendations</p>
+                    </div>
+                    
+                    <div class="decision-item">
+                        <div class="action-pass">🔄</div>
+                        <h4 style="margin: 10px 0; color: white;">Pass</h4>
+                        <p style="font-size: 24px; font-weight: bold;">{{ dss_insights.get('decision_distribution', {}).get('pass', 0) }}</p>
+                        <p style="color: rgba(255,255,255,0.8);">recommendations</p>
+                    </div>
+                    
+                    <div class="decision-item">
+                        <div class="action-dribble">🏃</div>
+                        <h4 style="margin: 10px 0; color: white;">Dribble</h4>
+                        <p style="font-size: 24px; font-weight: bold;">{{ dss_insights.get('decision_distribution', {}).get('dribble', 0) }}</p>
+                        <p style="color: rgba(255,255,255,0.8);">recommendations</p>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 25px;">
+                    <h4 style="color: white; margin-bottom: 15px;">💡 Key Recommendations</h4>
+                    <ul style="list-style-type: none; padding: 0;">
+                        {% for recommendation in dss_insights.get('recommendations', []) %}
+                            <li style="background: rgba(255,255,255,0.1); padding: 12px; margin-bottom: 8px; border-radius: 8px;">
+                                ✓ {{ recommendation }}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Event Timeline -->
+        <div class="timeline-section">
+            <h2 style="margin-bottom: 20px;">⏱️ Event Timeline</h2>
+            
+            {% set all_events = analytics_data.get('pass_events', []) + 
+                                analytics_data.get('shot_events', []) + 
+                                analytics_data.get('goal_events', []) %}
+            
+            <div class="event-timeline">
+                {% for event in all_events|sort(attribute='frame') %}
+                    <div class="event-item">
+                        <span class="event-time">{{ "%.1f"|format(event.get('time', event.get('frame', 0)/30)) }}s</span>
+                        <span class="event-icon">
+                            {% if event.get('type') == 'goal' %}
+                                🥅
+                            {% elif event.get('type') == 'shot' %}
+                                ⚽
+                            {% elif event.get('type') == 'pass' %}
+                                🔄
+                            {% else %}
+                                📍
+                            {% endif %}
+                        </span>
+                        <span class="event-desc">
+                            {% if event.get('type') == 'goal' %}
+                                <strong>GOAL!</strong> Scored by Player {{ event.get('player', 'Unknown') }}
+                            {% elif event.get('type') == 'shot' %}
+                                <strong>Shot</strong> by Player {{ event.get('player', 'Unknown') }}
+                            {% elif event.get('type') == 'pass' %}
+                                <strong>Pass</strong> Player {{ event.get('from_player', 'Unknown') }} → Player {{ event.get('to_player', 'Unknown') }}
+                            {% else %}
+                                <strong>{{ event.get('type', 'Event') }}</strong>
+                            {% endif %}
+                        </span>
+                        {% if event.get('probability') %}
+                            <span class="event-probability">{{ "%.0f"|format(event.probability) }}%</span>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function generateMatchReport() {
+            document.getElementById('loading').classList.add('active');
+            
+            // Extract analytics filename from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const analyticsFile = urlParams.get('analytics');
+            
+            if (analyticsFile) {
+                fetch(`/match_report/${analyticsFile}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.text();
+                    })
+                    .then(html => {
+                        // Open report in new window
+                        const newWindow = window.open();
+                        newWindow.document.write(html);
+                        newWindow.document.close();
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Failed to generate match report. Please try again.');
+                    })
+                    .finally(() => {
+                        document.getElementById('loading').classList.remove('active');
+                    });
+            } else {
+                alert('Analytics data not available');
+                document.getElementById('loading').classList.remove('active');
+            }
+        }
+
+        // Auto-refresh status if video is still processing
+        function checkVideoStatus() {
+            // Check if video is loaded and playable
+            const video = document.querySelector('video');
+            if (video) {
+                video.addEventListener('error', function() {
+                    console.log('Video still processing...');
+                    setTimeout(function() {
+                        window.location.reload();
+                    }, 3000);
+                });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', checkVideoStatus);
+    </script>
+</body>
+</html>
